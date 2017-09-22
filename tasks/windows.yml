@@ -6,6 +6,7 @@
 
 - set_fact:
     machine_arch: "{{ 'x86' if ansible_env.PROCESSOR_ARCHITECTURE == 'x86' else 'x86_64' }}"
+    chocolatey_lib_path: 'c:\ProgramData\chocolatey\lib'
 
 - set_fact:
     filebeat_config_path: '{{ chocolatey_lib_path }}\filebeat\tools\filebeat-{{ filebeat_version }}-windows-{{ machine_arch }}'
