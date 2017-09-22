@@ -1,0 +1,56 @@
+- name: Install Filebeat
+  win_chocolatey:
+    name: filebeat
+    state: present
+    version: "{{ filebeat_version }}"
+
+- set_fact:
+    machine_arch: "{{ 'x86' if ansible_env.PROCESSOR_ARCHITECTURE == 'x86' else 'x86_64' }}"
+
+- set_fact:
+    filebeat_config_path: '{{ chocolatey_lib_path }}\filebeat\tools\filebeat-{{ filebeat_version }}-windows-{{ machine_arch }}'
+
+# These facts can be used in the dict filebeat_config that is used by the
+# filebeat config template file deployed in the next task.
+- set_fact:
+    filebeat_ca_path: '{{ filebeat_config_path }}\ca.crt'
+    filebeat_ssl_cert_path: '{{ filebeat_config_path }}\ssl.crt'
+    filebeat_ssl_key_path: '{{ filebeat_config_path }}\ssl.key'
+
+- name: Deploy file beat config
+  win_template:
+    src: "filebeat.yml.j2"
+    dest: '{{ filebeat_config_path }}\filebeat.yml'
+
+- name: copy ca certificate if required
+  win_copy:
+    content: "{{ filebeat_ca_cert }}"
+    dest: '{{ filebeat_ca_path }}'
+    owner: root
+    group: root
+    mode: 0400
+  when: filebeat_ca_cert != None
+
+- name: copy ssl certificate if required
+  win_copy:
+    content: "{{ filebeat_ssl_cert }}"
+    dest: '{{ filebeat_ssl_cert_path }}'
+    owner: root
+    group: root
+    mode: 0400
+  when: filebeat_ssl_cert != None
+
+- name: copy ssl key if required
+  win_copy:
+    content: "{{ filebeat_ssl_key }}"
+    dest: '{{ filebeat_ssl_key_path }}'
+    owner: root
+    group: root
+    mode: 0400
+  when: filebeat_ssl_key != None
+
+- name: Enable filebeat service
+  win_service:
+    name: filebeat
+    start_mode: auto
+    state: restarted
