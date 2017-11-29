@@ -39,11 +39,19 @@ filebeat_ssl_key_path: /etc/filebeat/ssl.key
 
 # Repository settings
 filebeat_gpg_url: https://packages.elastic.co/GPG-KEY-elasticsearch
+
+filebeat_repo_category: "{{ filebeat_version|version_compare('5', '<')|ternary('v1-4', filebeat_version|version_compare('6', '<')|ternary('v5', 'v6')) }}"
+
 ## Debian
-filebeat_apt_repo_v1: "deb https://packages.elastic.co/beats/apt stable main"
-filebeat_apt_repo_v5: "deb https://artifacts.elastic.co/packages/5.x/apt stable main"
-filebeat_apt_repo: "{{ filebeat_version|version_compare('5', '<')|ternary(filebeat_apt_repo_v1, filebeat_apt_repo_v5) }}"
+filebeat_apt_repos:
+  v1-4: "deb https://packages.elastic.co/beats/apt stable main"
+  v5: "deb https://artifacts.elastic.co/packages/5.x/apt stable main"
+  v6: "deb https://artifacts.elastic.co/packages/6.x/apt stable main"
+filebeat_apt_repo: "{{ filebeat_apt_repos[filebeat_repo_category] }}"
+
 ## Redhat
-filebeat_repo_url_v1: https://packages.elastic.co/beats/yum/el/$basearch
-filebeat_repo_url_v5: https://artifacts.elastic.co/packages/5.x/yum
-filebeat_repo_url: "{{ filebeat_version|version_compare('5', '<')|ternary(filebeat_repo_url_v1, filebeat_repo_url_v5) }}"
+filebeat_repo_urls:
+  v1-4: https://packages.elastic.co/beats/yum/el/$basearch
+  v5: https://artifacts.elastic.co/packages/5.x/yum
+  v6: https://artifacts.elastic.co/packages/6.x/yum
+filebeat_repo_url: "{{ filebeat_repo_urls[filebeat_repo_category] }}"
