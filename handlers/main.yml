@@ -3,3 +3,10 @@
   service:
     name: filebeat
     state: restarted
+  when: ansible_os_family != 'Windows'
+
+- name: restart filebeat
+  win_service:
+    name: filebeat
+    state: restarted
+  when: ansible_os_family == 'Windows'

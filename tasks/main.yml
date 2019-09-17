@@ -1,4 +1,10 @@
 ---
+# Version 7 is split into oss version, we only support oss version for now and
+# seems not be available in deb repo.
+- fail:
+    msg: 'Unsupported filebeat version'
+  when: filebeat_version.split('.')[0] != '7' or filebeat_distribution|default('none') != 'oss'
+
 - block:
   - include: redhat.yml
     when: ansible_os_family == 'RedHat'
@@ -8,61 +14,5 @@
 
   - include: windows.yml
     when: ansible_os_family == 'Windows'
-  when: filebeat_version.split('.')[0] != '7'
 
-# Version 7 is split into oss version, we only support oss version for now and
-# seems not be available in deb repo.
-
-- block:
-    - name: Install filebeat version 7.x
-      apt:
-        deb: "https://s3-ap-southeast-2.amazonaws.com/xvt-public-repo/pub/elasticsearch/filebeat-oss-{{ filebeat_version }}-amd64.deb"
-        state: present
-      when: ansible_os_family == 'Debian'
-# TODO windows support?
-  when: filebeat_version.split('.')[0] == '7'
-
-- block:
-    - name: create filebeat.yml
-      template:
-        src: filebeat.yml.j2
-        dest: /etc/filebeat/filebeat.yml
-      notify:
-        - restart filebeat
-
-    - name: copy ca certificate if required
-      copy:
-        content: "{{ filebeat_ca_cert }}"
-        dest: "{{ filebeat_ca_path }}"
-        owner: root
-        group: root
-        mode: 0400
-      when: filebeat_ca_cert != None
-
-    - name: copy ssl certificate if required
-      copy:
-        content: "{{ filebeat_ssl_cert }}"
-        dest: "{{ filebeat_ssl_cert_path }}"
-        owner: root
-        group: root
-        mode: 0400
-      when: filebeat_ssl_cert != None
-
-    - name: copy ssl key if required
-      copy:
-        content: "{{ filebeat_ssl_key }}"
-        dest: "{{ filebeat_ssl_key_path }}"
-        owner: root
-        group: root
-        mode: 0400
-      when: filebeat_ssl_key != None
-
-    - name: flush handlers to prevent start then restart
-      meta: flush_handlers
-
-    - name: start and enable filebeat
-      service:
-        name: filebeat
-        state: started
-        enabled: true
-  when: ansible_os_family != 'Windows'
+- include_tasks: deploy-config.yml
